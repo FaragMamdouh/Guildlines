@@ -1,0 +1,149 @@
+library(tidyverse)
+library(moderndive)
+library(infer)
+library(ggpubr)
+pennies_sample = pennies_sample
+ggplot(pennies_sample, aes(x= year))+ geom_histogram(bins = 10, col= "white")
+pennies_sample %>% 
+  summarize(meanyear = mean(year))
+
+pennies_resamples = pennies_resamples
+g1 = ggplot(pennies_resamples, aes(x=year))+geom_histogram(bins = 10, color = "white")
+g2 = ggplot(pennies_sample, aes(x= year))+geom_histogram(bins = 10)+labs(title = "original") 
+
+ggarrange(g1,g2)
+
+pennies_sample %>%
+  summarize(meanyear = mean(year))
+
+
+pennies_resamples %>%
+  summarize(meanyear = mean(year))
+#or 
+mean(pennies_resamples$year)
+
+
+#resampling 35
+data = pennies_resamples %>% 
+  group_by(name) %>%
+  summarize(mean_year = mean(year))
+
+ggplot(data, aes(x= mean_year))+ geom_histogram(binwidth = 1, boundary = 1990, col = "white")
+
+
+virtual_resample= pennies_sample %>%
+  rep_sample_n(size =50, replace = TRUE, reps = 1000)
+
+virtual_resample_mean = virtual_resample%>%
+  group_by(replicate)%>%
+  summarize(mean_year = mean(year))
+
+ggplot(virtual_resample_mean,aes(x=mean_year))+geom_histogram(col = "white", binwidth = 1, boundary = 1990)
+# 
+# Point estimation
+# the sample that are taken (Take a specific and chosen one value)
+# the mean = 1996
+
+
+#  What is the confidence intervals?
+#  the mean is located between 1992 and 2000
+#  
+
+# how can I get the accurate confidence intervals?
+# 1- percentile method                      2- standard error method
+#                                                  sd range between -3 and 3
+#                                                  sd must be higher than 2
+
+
+
+# Infer workflow for tidy statistics
+# 1- specify choose the used variables 
+# 2- generate to resampling using bootstrap 1000 is the better
+# 3- calculate the mean sd 
+# 4- visualize
+
+data = pennies_sample %>% 
+  infer::specify( response = year) %>%
+  generate(reps = 1000, type = "bootstrap") %>%
+  calculate(stat = "mean")
+
+visualize(data)
+
+# confidence intervals using infer workflow
+# 1- percentile method
+percentile_ci <- data %>%
+  get_confidence_interval(level = .95, type =  "percentile")
+visualize(data) + shade_confidence_interval(percentile_ci, color = "red", fill = "white")
+
+
+# 2- sd get the mean of the mean
+data = virtual_resample_means_1000 %>%
+  summarize(mean_of_mean = mean(mean_year))
+
+
+
+#------------------------------------------------------------------------------#
+# Hypothesis test
+# Null and Alternative
+# If male percentage is higher than female percentage it will be on side
+# 
+# If the male percentage doesnot equal to female percentage, it will be two sided
+
+
+# T test
+# To check the significane between only two groups 
+# Now I have two groups
+# what should I have to perform T test
+# 1- two group 
+# 2- two means
+# Is there a signficant difference between the two groups?
+# Is this a Null hypothesis and an alternative hypothesis?
+# 
+# what are the types of T test?
+# Independent samples t-test (unpaired): This is used to compare the means of two independent groups to determine if there is a significant difference between them.
+#Paired samples t-test: Also known as a dependent samples t-test, this is used when the same group of subjects is measured twice, resulting in pairs of observations that are related.
+#One-sample t-test: This test is used to compare the mean of a single sample to a known value or a hypothesized population mean. 
+library(ggpubr)
+library(tidyverse)
+
+# You should Have both of the mean and Sd before running t.test function
+# my_data contain the two column
+# group (two groups)
+# weights the values for each element in the group
+t.test(weight ~ group,  data = my_data, paired = FALSE)
+t.test(weight ~ group,  data = my_data, paired = TRUE)
+
+
+# ANOVA 
+# To check the significane differecne between many groups
+#  If the ANOVA results are significant, it means that at least one group mean is significantly different from the others, but it does not tell you which specific groups are different.
+data(PlantGrowth)
+table(PlantGrowth$group)
+res = aov(weight~ group,data = PlantGrowth)
+summary(res)
+
+# Two-way ANOVA
+
+# # Two-way ANOVA (Analysis of Variance) is a statistical method used to analyze 
+# # the effects of two categorical independent variables (factors) on a continuous dependent variable. It allows you to simultaneously examine the main effects of each independent variable as well as any interaction effects between them.
+# The null hypotheses for a two-way ANOVA are:
+#   
+#   There is no main effect of Factor A.
+# There is no main effect of Factor B.
+# There is no interaction effect between Factor A and Factor B.
+
+# Load the ChickWeight dataset
+data("ChickWeight")
+
+# Display the structure of the dataset
+str(ChickWeight)
+# the time and weight are the independent values
+anova_result <- aov(weight ~ Diet * Time, data = ChickWeight)
+summary(anova_result)
+
+
+
+
+# CHi-square 
+#to determine whether there is a significant association between categorical variables.
+# such as color hair and 
