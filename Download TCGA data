@@ -1,0 +1,52 @@
+library(TCGAbiolinks)
+library(TCGAbiolinksGUI.data)
+
+?GDCquery
+# Gene expression aligned against hg38
+
+query <- GDCquery(
+  project = "TCGA-KIRC",
+  data.category = "Transcriptome Profiling",
+  data.type = "Gene Expression Quantification", 
+  workflow.type = "STAR - Counts",
+  sample.type = c("Primary Tumor")
+  )
+GDCdownload(query = query)
+data <- GDCprepare(query = query, summarizedExperiment = FALSE)
+data <- data[!(data$gene_id %in% c("N_unmapped", "N_multimapping", "N_noFeature", "N_ambiguous")), ]
+
+cancer = data
+cancer <- as.matrix(subset(cancer, gene_type == "protein_coding"))
+# Get the column indices for "gene_name" and columns that begin with "fpkm_unstranded"
+selected_columns_indices <- as.integer(c(2, 
+                                         grep("^fpkm_unstranded", colnames(cancer))))
+
+# Subset the data frame based on the selected columns
+cancer <- cancer[, selected_columns_indices]
+write.table(cancer, "fpkm_unstranded_cancer.csv")
+cancer = read.csv("fpkm_unstranded_cancer.csv",header = TRUE, sep = " ")
+#------------------------------------------------------------------------------#
+# Gene expression aligned against hg38
+query <- GDCquery(
+  project = "TCGA-LIHC",
+  data.category = "Transcriptome Profiling",
+  data.type = "Gene Expression Quantification", 
+  workflow.type = "STAR - Counts",
+  sample.type = c("Solid Tissue Normal")
+)
+GDCdownload(query = query)
+data <- GDCprepare(query = query, summarizedExperiment = FALSE)
+data <- data[!(data$gene_id %in% c("N_unmapped", "N_multimapping", "N_noFeature", "N_ambiguous")), ]
+
+LIHC_normal_collected = data
+LIHC_normal_collected <- as.matrix(subset(LIHC_normal_collected, gene_type == "protein_coding"))
+# Get the column indices for "gene_name" and columns that begin with "fpkm_unstranded"
+selected_columns_indices <- as.integer(c(2, 
+                              grep("^fpkm_unstranded", colnames(LIHC_normal_collected))))
+
+# Subset the data frame based on the selected columns
+LIHC_normal_collected <- LIHC_normal_collected[, selected_columns_indices]
+write.table(LIHC_normal_collected, "fpkm_unstranded_normal.csv")
+setwd("F:/5- PAN CAncer/Done/ACTL6A/0 machine learning/biospecimen")
+normal = read.csv("fpkm_unstranded_normal.csv", header = TRUE, sep = " ")
+cancer = read.csv("fpkm_unstranded_cancer.csv", header = TRUE, sep = " ")
